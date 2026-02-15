@@ -5,7 +5,7 @@ Google Spreadsheets에 있는 단어 데이터를 불러와 플래시카드로 �
 ## 준비물
 
 - Google Sheets API 키 (읽기용)
-- Google Service Account (쓰기용)
+- Google Apps Script (쓰기용)
 - 스프레드시트
 - OpenAI API 키 (AI 예문 기능 사용 시)
 
@@ -19,9 +19,9 @@ VITE_SHEET_ID=
 VITE_SHEET_MASTER=Master
 VITE_SHEET_TODAY=Today
 VITE_SHEET_REVIEW=Review
+VITE_SHEETS_APP_URL=
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o
-GOOGLE_SERVICE_ACCOUNT_JSON=
 ```
 
 ## 설정 가이드
@@ -33,36 +33,84 @@ GOOGLE_SERVICE_ACCOUNT_JSON=
 3. "사용자 인증 정보" → "API 키 만들기"
 4. API 키를 `VITE_GOOGLE_API_KEY`에 입력
 
-### 2. Google Service Account 생성 (쓰기용)
+### 2. Google Apps Script 만들기 (쓰기용)
 
-복습 시트에 단어를 추가하려면 서비스 계정이 필요합니다.
+복습 시트에 단어를 추가하려면 Apps Script가 필요합니다.
 
-1. [Google Cloud Console](https://console.cloud.google.com/)에서 같은 프로젝트 선택
-2. "IAM 및 관리자" → "서비스 계정" 클릭
-3. "+ 서비스 계정 만들기" 클릭
-4. 서비스 계정 이름 입력 (예: `learneng-sheets-writer`)
-5. 역할은 선택하지 않고 "완료" 클릭
-6. 생성된 서비스 계정 클릭 → "키" 탭 → "키 추가" → "새 키 만들기"
-7. JSON 선택 → "만들기" → JSON 파일 다운로드
-8. JSON 파일 내용 전체를 `GOOGLE_SERVICE_ACCOUNT_JSON`에 **한 줄로** 입력
-   - 예: `{"type":"service_account","project_id":"...","private_key":"..."}`
+1. Google Sheets 열기 → 상단 메뉴에서 "확장 프로그램" → "Apps Script" 클릭
+2. 다음 코드 복사해서 붙여넣기:
 
-### 3. 스프레드시트 공유
+```javascript
+function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  const sheetName = data.sheet || "Review";
+  const row = data.row || {};
 
-1. 다운로드한 JSON 파일에서 `client_email` 값 복사 (예: `xxx@xxx.iam.gserviceaccount.com`)
-2. Google Sheets에서 "공유" 버튼 클릭
-3. 복사한 이메일 주소 입력
-4. 권한: "편집자"로 설정
-5. "공유" 클릭
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
 
-### 4. 스프레드시트 ID 가져오기
+  const values = [
+    row.word || "",
+    row.meaning || "",
+    row.example || "",
+    Array.isArray(row.tags) ? row.tags.join(", ") : row.tags || "",
+    row.level || "",
+    row.lastReviewed || "",
+    row.nextReview || "",
+  ];
+
+  sheet.appendRow(values);
+
+  return ContentService.createTextOutput(
+    JSON.stringify({ ok: true })
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+```
+
+3. 우측 상단 "배포" → "새 배포" 클릭
+4. "유형 선택" (톱니바퀴 아이콘) → "웹 앱" 선택
+5. 다음과 같이 설정:
+   - 설명: `learneng API`
+   - 실행 계정: **나**
+   - 액세스 권한: **모든 사용자**
+6. "배포" 클릭
+7. **웹 앱 URL** 복사 (예: `https://script.google.com/macros/s/.../exec`)
+8. `.env` 파일의 `VITE_SHEETS_APP_URL`에 URL 붙여넣기
+
+### 3. 스프레드시트 설정
+
+#### 스프레드시트 ID 가져오기
 
 스프레드시트 URL에서 ID 부분을 복사하세요:
 ```
 https://docs.google.com/spreadsheets/d/[SHEET_ID]/edit
 ```
 
-### 5. OpenAI API 키 발급 (선택사항)
+#### 시트 만들기
+
+다음 3개의 시트를 만드세요:
+- `Master` (전체 단어 목록)
+- `Today` (오늘 학습할 단어)
+- `Review` (복습 단어)
+
+#### 컬럼 구조 (첫 번째 행)
+
+각 시트에 다음 컬럼을 만드세요:
+- `word` (단어)
+- `meaning` (의미)
+- `example` (예문)
+- `tags` (태그)
+- `level` (난이도)
+- `lastReviewed` (마지막 복습일)
+- `nextReview` (다음 복습일)
+
+#### 공개 권한 설정
+
+1. 우측 상단의 "공유" 버튼 클릭
+2. "일반 액세스" → "링크가 있는 모든 사용자"로 변경
+3. 권한: "뷰어"로 설정
+
+### 4. OpenAI API 키 발급 (선택사항)
 
 AI 예문 생성 기능을 사용하려면:
 1. [OpenAI Platform](https://platform.openai.com/)에서 API 키 생성
@@ -70,44 +118,26 @@ AI 예문 생성 기능을 사용하려면:
 
 ## 실행
 
-### 프론트엔드만 (Google Sheets 읽기만)
 ```bash
 npm install
 npm run dev
 ```
 
-### 전체 기능 (Sheets + API)
-```bash
-npm install -g vercel
-npm run dev:vercel
-```
-
-## 스프레드시트 컬럼 예시
-
-- `word`
-- `meaning`
-- `example`
-- `tags`
-- `level`
-- `lastReviewed`
-- `nextReview`
-
-첫 행은 헤더로 사용됩니다.
+http://localhost:5173에서 앱이 실행됩니다!
 
 ## 배포
 
 Vercel에 배포:
 
-1. GitHub 저장소 연결
-2. 환경 변수 설정:
+1. GitHub 저장소에 푸시
+2. [Vercel](https://vercel.com/)에서 프로젝트 연결
+3. 환경 변수 설정:
    - `VITE_GOOGLE_API_KEY` (API 키)
    - `VITE_SHEET_ID` (스프레드시트 ID)
    - `VITE_SHEET_MASTER=Master`
    - `VITE_SHEET_TODAY=Today`
    - `VITE_SHEET_REVIEW=Review`
+   - `VITE_SHEETS_APP_URL` (Apps Script 웹 앱 URL)
    - `OPENAI_API_KEY` (OpenAI API 키)
    - `OPENAI_MODEL=gpt-4o`
-   - `GOOGLE_SERVICE_ACCOUNT_JSON` (JSON 파일 전체 내용을 한 줄로)
-3. 배포 완료!
-
-**중요**: `GOOGLE_SERVICE_ACCOUNT_JSON`은 JSON 파일 내용을 **한 줄로** 입력해야 합니다.
+4. 배포 완료!

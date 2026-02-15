@@ -65,7 +65,7 @@ const Flashcard = ({
             </div>
           )}
         </div>
-        <div className={styles.buttons}>
+        <div className={styles.buttons} onClick={(e) => e.stopPropagation()}>
           {onAddToReview && (
             <button
               type="button"
@@ -109,7 +109,7 @@ const Flashcard = ({
         </button>
       </div>
 
-      <div className="actions">
+      {/* <div className="actions">
         <button type="button" className="btn primary" onClick={onToggle}>
           {flipped ? "단어 보기" : "정답 확인"}
         </button>
@@ -121,7 +121,7 @@ const Flashcard = ({
         >
           {aiLoading ? "AI 예문 생성 중..." : "AI 예문 생성"}
         </button>
-      </div>
+      </div> */}
 
       {aiExample && (
         <div className="ai-example">

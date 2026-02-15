@@ -1,20 +1,24 @@
-import type { VocabEntry } from '../services/sheets'
+import type { VocabEntry } from "../../services/sheets";
+import styles from "./Flashcard.module.scss";
 
 type FlashcardProps = {
-  entry: VocabEntry
-  flipped: boolean
-  onToggle: () => void
-  onPrev: () => void
-  onNext: () => void
-  onGenerateExample: () => void
-  onAddToReview?: () => void
-  canAddToReview?: boolean
-  addLoading?: boolean
-  aiExample?: string | null
-  aiLoading?: boolean
-  index: number
-  total: number
-}
+  entry: VocabEntry;
+  flipped: boolean;
+  onToggle: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onGenerateExample: () => void;
+  onAddToReview?: () => void;
+  onMarkDone?: () => void;
+  canAddToReview?: boolean;
+  canMarkDone?: boolean;
+  addLoading?: boolean;
+  doneLoading?: boolean;
+  aiExample?: string | null;
+  aiLoading?: boolean;
+  index: number;
+  total: number;
+};
 
 const Flashcard = ({
   entry,
@@ -24,8 +28,11 @@ const Flashcard = ({
   onNext,
   onGenerateExample,
   onAddToReview,
+  onMarkDone,
   canAddToReview,
+  canMarkDone,
   addLoading,
+  doneLoading,
   aiExample,
   aiLoading,
   index,
@@ -33,15 +40,15 @@ const Flashcard = ({
 }: FlashcardProps) => {
   return (
     <section className="flashcard">
-      <div className={`card ${flipped ? 'is-flipped' : ''}`} onClick={onToggle}>
+      <div className={`card ${flipped ? "is-flipped" : ""}`} onClick={onToggle}>
         <div className="card-face card-front">
           <p className="card-label">오늘의 단어</p>
-          <h2 className="word">{entry.word || '단어 없음'}</h2>
+          <h2 className="word">{entry.word || "단어 없음"}</h2>
           {entry.level && <span className="chip">{entry.level}</span>}
         </div>
         <div className="card-face card-back">
           <p className="card-label">의미</p>
-          <h3 className="meaning">{entry.meaning || '의미 없음'}</h3>
+          <h3 className="meaning">{entry.meaning || "의미 없음"}</h3>
           {entry.example && (
             <div className="example-block">
               <p className="example-title">기본 예문</p>
@@ -56,6 +63,36 @@ const Flashcard = ({
                 </span>
               ))}
             </div>
+          )}
+        </div>
+        <div className={styles.buttons}>
+          {onAddToReview && (
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={onAddToReview}
+              disabled={!canAddToReview || addLoading}
+            >
+              {addLoading
+                ? "복습에 추가 중..."
+                : canAddToReview
+                  ? "복습에 추가"
+                  : "복습에 추가됨"}
+            </button>
+          )}
+          {onMarkDone && (
+            <button
+              type="button"
+              className="btn primary"
+              onClick={onMarkDone}
+              disabled={!canMarkDone || doneLoading}
+            >
+              {doneLoading
+                ? "처리 중..."
+                : canMarkDone
+                  ? "학습 완료"
+                  : "완료됨"}
+            </button>
           )}
         </div>
       </div>
@@ -74,7 +111,7 @@ const Flashcard = ({
 
       <div className="actions">
         <button type="button" className="btn primary" onClick={onToggle}>
-          {flipped ? '단어 보기' : '정답 확인'}
+          {flipped ? "단어 보기" : "정답 확인"}
         </button>
         <button
           type="button"
@@ -82,22 +119,8 @@ const Flashcard = ({
           onClick={onGenerateExample}
           disabled={aiLoading}
         >
-          {aiLoading ? 'AI 예문 생성 중...' : 'AI 예문 생성'}
+          {aiLoading ? "AI 예문 생성 중..." : "AI 예문 생성"}
         </button>
-        {onAddToReview && (
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={onAddToReview}
-            disabled={!canAddToReview || addLoading}
-          >
-            {addLoading
-              ? '복습에 추가 중...'
-              : canAddToReview
-                ? '복습에 추가'
-                : '복습에 추가됨'}
-          </button>
-        )}
       </div>
 
       {aiExample && (
@@ -107,7 +130,7 @@ const Flashcard = ({
         </div>
       )}
     </section>
-  )
-}
+  );
+};
 
-export default Flashcard
+export default Flashcard;

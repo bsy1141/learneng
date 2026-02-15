@@ -42,10 +42,41 @@ OPENAI_MODEL=gpt-4o
 ```javascript
 function doPost(e) {
   const data = JSON.parse(e.postData.contents);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  if (data.action === "updateStatus") {
+    const sheetName = data.sheet || "Today";
+    const sheet = ss.getSheetByName(sheetName);
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0] || [];
+
+    const statusIndex = headers.findIndex(
+      (header) => header === "Status" || header === "학습 상태 (Status)",
+    );
+    const wordIndex = headers.findIndex(
+      (header) => header === "word" || header === "단어 (Word)",
+    );
+
+    if (statusIndex === -1 || wordIndex === -1) {
+      return ContentService.createTextOutput(
+        JSON.stringify({ ok: false, error: "Status or word column missing" }),
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][wordIndex]).trim() === String(data.word).trim()) {
+        sheet.getRange(i + 1, statusIndex + 1).setValue(data.status || "done");
+        break;
+      }
+    }
+
+    return ContentService.createTextOutput(
+      JSON.stringify({ ok: true }),
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+
   const sheetName = data.sheet || "Review";
   const row = data.row || {};
-
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(sheetName);
 
   const values = [
@@ -102,8 +133,11 @@ https://docs.google.com/spreadsheets/d/[SHEET_ID]/edit
 - `example` (예문)
 - `tags` (태그)
 - `level` (난이도)
+- `Status` (학습 상태, `in progress` / `done`)
 - `lastReviewed` (마지막 복습일)
 - `nextReview` (다음 복습일)
+
+`Status`가 `done`인 항목은 앱에서 자동으로 숨깁니다.
 
 #### 공개 권한 설정
 

@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Flashcard from "./components/Flashcard";
-import { addToReview, fetchSheet, type VocabEntry } from "./services/sheets";
+import {
+  addToReview,
+  fetchSheet,
+  type VocabEntry,
+  updateTodayStatus,
+} from "./services/sheets";
 import { generateExample } from "./services/ai";
 
 type TabKey = "today" | "review";
@@ -40,13 +45,24 @@ const App = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [addMessage, setAddMessage] = useState<string | null>(null);
+  const [doneLoading, setDoneLoading] = useState(false);
 
   const currentSheetName = useMemo(
     () => TAB_CONFIG.find((tab) => tab.key === activeTab)?.sheet ?? "Today",
     [activeTab],
   );
 
-  const currentList = data[activeTab];
+  const isDoneStatus = (value?: string) => {
+    const normalized = value?.trim().toLowerCase();
+    return normalized === "done" || normalized === "완료";
+  };
+
+  const visibleList = useMemo(() => {
+    if (activeTab !== "today") return data[activeTab];
+    return data.today.filter((entry) => !isDoneStatus(entry.status));
+  }, [activeTab, data]);
+
+  const currentList = visibleList;
   const currentEntry = currentList[index];
 
   const resetCardState = () => {
@@ -125,6 +141,11 @@ const App = () => {
     !!currentEntry?.word &&
     !reviewWordSet.has(currentEntry.word.trim().toLowerCase());
 
+  const canMarkDone =
+    activeTab === "today" &&
+    !!currentEntry?.word &&
+    !isDoneStatus(currentEntry.status);
+
   const handleAddToReview = async () => {
     if (!currentEntry || !canAddToReview) return;
 
@@ -150,6 +171,38 @@ const App = () => {
       setAddMessage(message);
     } finally {
       setAddLoading(false);
+    }
+  };
+
+  const handleMarkDone = async () => {
+    if (!currentEntry || !canMarkDone) return;
+
+    setDoneLoading(true);
+    setAddMessage(null);
+
+    try {
+      await updateTodayStatus({
+        word: currentEntry.word,
+        status: "done",
+      });
+
+      setData((prev) => ({
+        ...prev,
+        today: prev.today.map((entry) =>
+          entry.word === currentEntry.word
+            ? { ...entry, status: "done" }
+            : entry,
+        ),
+      }));
+
+      setIndex(0);
+      setAddMessage("학습 완료로 표시되었습니다.");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "학습 완료 처리 실패";
+      setAddMessage(message);
+    } finally {
+      setDoneLoading(false);
     }
   };
 
@@ -215,9 +268,14 @@ const App = () => {
             onPrev={handlePrev}
             onNext={handleNext}
             onGenerateExample={handleGenerateExample}
-            onAddToReview={activeTab === "today" ? handleAddToReview : undefined}
+            onAddToReview={
+              activeTab === "today" ? handleAddToReview : undefined
+            }
             canAddToReview={canAddToReview}
             addLoading={addLoading}
+            onMarkDone={activeTab === "today" ? handleMarkDone : undefined}
+            canMarkDone={canMarkDone}
+            doneLoading={doneLoading}
             aiExample={aiExample}
             aiLoading={aiLoading}
             index={index}

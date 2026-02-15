@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Flashcard from "./components/Flashcard";
-import { fetchSheet, type VocabEntry } from "./services/sheets";
+import { addToReview, fetchSheet, type VocabEntry } from "./services/sheets";
 import { generateExample } from "./services/ai";
 
-type TabKey = "today" | "review" | "master";
+type TabKey = "today" | "review";
 
 type TabConfig = {
   key: TabKey;
@@ -22,17 +22,11 @@ const TAB_CONFIG: TabConfig[] = [
     label: "복습",
     sheet: import.meta.env.VITE_SHEET_REVIEW || "Review",
   },
-  {
-    key: "master",
-    label: "전체",
-    sheet: import.meta.env.VITE_SHEET_MASTER || "Master",
-  },
 ];
 
 const initialData: Record<TabKey, VocabEntry[]> = {
   today: [],
   review: [],
-  master: [],
 };
 
 const App = () => {
@@ -44,6 +38,8 @@ const App = () => {
   const [flipped, setFlipped] = useState(false);
   const [aiExample, setAiExample] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
+  const [addMessage, setAddMessage] = useState<string | null>(null);
 
   const currentSheetName = useMemo(
     () => TAB_CONFIG.find((tab) => tab.key === activeTab)?.sheet ?? "Today",
@@ -56,6 +52,7 @@ const App = () => {
   const resetCardState = () => {
     setFlipped(false);
     setAiExample(null);
+    setAddMessage(null);
   };
 
   const loadSheet = async (tabKey: TabKey, force = false) => {
@@ -83,6 +80,10 @@ const App = () => {
     setIndex(0);
     resetCardState();
   }, [activeTab]);
+
+  useEffect(() => {
+    loadSheet("review");
+  }, []);
 
   const handlePrev = () => {
     if (currentList.length === 0) return;
@@ -112,6 +113,43 @@ const App = () => {
       setAiExample(message);
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  const reviewWordSet = useMemo(() => {
+    return new Set(data.review.map((entry) => entry.word.trim().toLowerCase()));
+  }, [data.review]);
+
+  const canAddToReview =
+    activeTab === "today" &&
+    !!currentEntry?.word &&
+    !reviewWordSet.has(currentEntry.word.trim().toLowerCase());
+
+  const handleAddToReview = async () => {
+    if (!currentEntry || !canAddToReview) return;
+
+    setAddLoading(true);
+    setAddMessage(null);
+
+    try {
+      await addToReview({
+        word: currentEntry.word,
+        meaning: currentEntry.meaning,
+        example: currentEntry.example,
+        tags: currentEntry.tags,
+        level: currentEntry.level,
+      });
+
+      setData((prev) => ({
+        ...prev,
+        review: [...prev.review, currentEntry],
+      }));
+      setAddMessage("복습 탭에 추가되었습니다.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "복습에 추가 실패";
+      setAddMessage(message);
+    } finally {
+      setAddLoading(false);
     }
   };
 
@@ -160,6 +198,7 @@ const App = () => {
 
         {loading && <div className="panel">단어를 불러오는 중...</div>}
         {error && !loading && <div className="panel error">{error}</div>}
+        {addMessage && !loading && <div className="panel">{addMessage}</div>}
 
         {!loading && !error && currentList.length === 0 && (
           <div className="panel">
@@ -176,6 +215,9 @@ const App = () => {
             onPrev={handlePrev}
             onNext={handleNext}
             onGenerateExample={handleGenerateExample}
+            onAddToReview={activeTab === "today" ? handleAddToReview : undefined}
+            canAddToReview={canAddToReview}
+            addLoading={addLoading}
             aiExample={aiExample}
             aiLoading={aiLoading}
             index={index}

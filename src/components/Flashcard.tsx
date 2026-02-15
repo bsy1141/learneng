@@ -7,6 +7,9 @@ type FlashcardProps = {
   onPrev: () => void
   onNext: () => void
   onGenerateExample: () => void
+  onAddToReview?: () => void
+  canAddToReview?: boolean
+  addLoading?: boolean
   aiExample?: string | null
   aiLoading?: boolean
   index: number
@@ -20,6 +23,9 @@ const Flashcard = ({
   onPrev,
   onNext,
   onGenerateExample,
+  onAddToReview,
+  canAddToReview,
+  addLoading,
   aiExample,
   aiLoading,
   index,
@@ -78,6 +84,20 @@ const Flashcard = ({
         >
           {aiLoading ? 'AI 예문 생성 중...' : 'AI 예문 생성'}
         </button>
+        {onAddToReview && (
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={onAddToReview}
+            disabled={!canAddToReview || addLoading}
+          >
+            {addLoading
+              ? '복습에 추가 중...'
+              : canAddToReview
+                ? '복습에 추가'
+                : '복습에 추가됨'}
+          </button>
+        )}
       </div>
 
       {aiExample && (

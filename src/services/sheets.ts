@@ -93,3 +93,27 @@ export const fetchSheet = async (sheetName: string): Promise<VocabEntry[]> => {
   const data = (await response.json()) as SheetResponse
   return mapRows(data.values ?? [])
 }
+
+type ReviewPayload = {
+  word: string
+  meaning: string
+  example?: string
+  tags?: string[]
+  level?: string
+  lastReviewed?: string
+  nextReview?: string
+}
+
+export const addToReview = async (payload: ReviewPayload) => {
+  const response = await fetch('/api/add-to-review', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    throw new Error('복습 시트에 추가하는 중 오류가 발생했습니다.')
+  }
+
+  return (await response.json()) as { ok?: boolean }
+}

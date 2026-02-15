@@ -16,10 +16,9 @@ Google Spreadsheets에 있는 단어 데이터를 불러와 플래시카드로 �
 ```
 VITE_GOOGLE_API_KEY=
 VITE_SHEET_ID=
-VITE_SHEET_MASTER=Master
 VITE_SHEET_TODAY=Today
 VITE_SHEET_REVIEW=Review
-VITE_SHEETS_APP_URL=
+APPS_SCRIPT_URL=
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o
 ```
@@ -62,7 +61,7 @@ function doPost(e) {
   sheet.appendRow(values);
 
   return ContentService.createTextOutput(
-    JSON.stringify({ ok: true })
+    JSON.stringify({ ok: true }),
   ).setMimeType(ContentService.MimeType.JSON);
 }
 ```
@@ -75,27 +74,29 @@ function doPost(e) {
    - 액세스 권한: **모든 사용자**
 6. "배포" 클릭
 7. **웹 앱 URL** 복사 (예: `https://script.google.com/macros/s/.../exec`)
-8. `.env` 파일의 `VITE_SHEETS_APP_URL`에 URL 붙여넣기
+8. `.env` 파일의 `APPS_SCRIPT_URL`에 URL 붙여넣기
 
 ### 3. 스프레드시트 설정
 
 #### 스프레드시트 ID 가져오기
 
 스프레드시트 URL에서 ID 부분을 복사하세요:
+
 ```
 https://docs.google.com/spreadsheets/d/[SHEET_ID]/edit
 ```
 
 #### 시트 만들기
 
-다음 3개의 시트를 만드세요:
-- `Master` (전체 단어 목록)
+다음 2개의 시트를 만드세요:
+
 - `Today` (오늘 학습할 단어)
 - `Review` (복습 단어)
 
 #### 컬럼 구조 (첫 번째 행)
 
 각 시트에 다음 컬럼을 만드세요:
+
 - `word` (단어)
 - `meaning` (의미)
 - `example` (예문)
@@ -113,6 +114,7 @@ https://docs.google.com/spreadsheets/d/[SHEET_ID]/edit
 ### 4. OpenAI API 키 발급 (선택사항)
 
 AI 예문 생성 기능을 사용하려면:
+
 1. [OpenAI Platform](https://platform.openai.com/)에서 API 키 생성
 2. `OPENAI_API_KEY`에 입력
 
@@ -134,10 +136,9 @@ Vercel에 배포:
 3. 환경 변수 설정:
    - `VITE_GOOGLE_API_KEY` (API 키)
    - `VITE_SHEET_ID` (스프레드시트 ID)
-   - `VITE_SHEET_MASTER=Master`
    - `VITE_SHEET_TODAY=Today`
    - `VITE_SHEET_REVIEW=Review`
-   - `VITE_SHEETS_APP_URL` (Apps Script 웹 앱 URL)
+   - `APPS_SCRIPT_URL` (Apps Script 웹 앱 URL)
    - `OPENAI_API_KEY` (OpenAI API 키)
-   - `OPENAI_MODEL=gpt-4o`
+   - `OPENAI_MODEL=gpt-5`
 4. 배포 완료!

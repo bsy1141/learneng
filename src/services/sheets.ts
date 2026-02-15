@@ -105,13 +105,7 @@ type ReviewPayload = {
 }
 
 export const addToReview = async (payload: ReviewPayload) => {
-  const appUrl = import.meta.env.VITE_SHEETS_APP_URL as string | undefined
-
-  if (!appUrl) {
-    throw new Error('VITE_SHEETS_APP_URL이 설정되지 않았습니다.')
-  }
-
-  const response = await fetch(appUrl, {
+  const response = await fetch('/api/review', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

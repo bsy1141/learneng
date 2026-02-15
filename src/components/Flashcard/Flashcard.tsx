@@ -26,7 +26,6 @@ const Flashcard = ({
   onToggle,
   onPrev,
   onNext,
-  onGenerateExample,
   onAddToReview,
   onMarkDone,
   canAddToReview,
@@ -34,7 +33,6 @@ const Flashcard = ({
   addLoading,
   doneLoading,
   aiExample,
-  aiLoading,
   index,
   total,
 }: FlashcardProps) => {

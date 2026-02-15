@@ -109,6 +109,11 @@ type StatusPayload = {
   status: string;
 };
 
+type DeletePayload = {
+  word: string;
+  sheet: string;
+};
+
 export const addToReview = async (payload: ReviewPayload) => {
   const response = await fetch("/api/review", {
     method: "POST",
@@ -139,6 +144,24 @@ export const updateTodayStatus = async (payload: StatusPayload) => {
 
   if (!response.ok) {
     throw new Error("학습 상태를 업데이트하는 중 오류가 발생했습니다.");
+  }
+
+  return (await response.json()) as { ok?: boolean };
+};
+
+export const deleteRowByWord = async (payload: DeletePayload) => {
+  const response = await fetch("/api/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "deleteRow",
+      sheet: payload.sheet,
+      word: payload.word,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("행 삭제 중 오류가 발생했습니다.");
   }
 
   return (await response.json()) as { ok?: boolean };

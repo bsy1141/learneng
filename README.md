@@ -75,6 +75,34 @@ function doPost(e) {
     ).setMimeType(ContentService.MimeType.JSON);
   }
 
+  if (data.action === "deleteRow") {
+    const sheetName = data.sheet || "Review";
+    const sheet = ss.getSheetByName(sheetName);
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0] || [];
+
+    const wordIndex = headers.findIndex(
+      (header) => header === "word" || header === "단어 (Word)",
+    );
+
+    if (wordIndex === -1) {
+      return ContentService.createTextOutput(
+        JSON.stringify({ ok: false, error: "word column missing" }),
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    for (let i = rows.length - 1; i >= 1; i--) {
+      if (String(rows[i][wordIndex]).trim() === String(data.word).trim()) {
+        sheet.deleteRow(i + 1);
+        break;
+      }
+    }
+
+    return ContentService.createTextOutput(
+      JSON.stringify({ ok: true }),
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+
   const sheetName = data.sheet || "Review";
   const row = data.row || {};
   const sheet = ss.getSheetByName(sheetName);
@@ -138,6 +166,7 @@ https://docs.google.com/spreadsheets/d/[SHEET_ID]/edit
 - `nextReview` (다음 복습일)
 
 `Status`가 `done`인 항목은 앱에서 자동으로 숨깁니다.
+`Review` 탭의 `학습 완료` 버튼은 해당 단어 행을 삭제합니다.
 
 #### 공개 권한 설정
 

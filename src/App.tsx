@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Flashcard from "./components/Flashcard";
 import {
   addToReview,
+  deleteRowByWord,
   fetchSheet,
   type VocabEntry,
   updateTodayStatus,
@@ -142,9 +143,8 @@ const App = () => {
     !reviewWordSet.has(currentEntry.word.trim().toLowerCase());
 
   const canMarkDone =
-    activeTab === "today" &&
     !!currentEntry?.word &&
-    !isDoneStatus(currentEntry.status);
+    (activeTab === "review" || !isDoneStatus(currentEntry.status));
 
   const handleAddToReview = async () => {
     if (!currentEntry || !canAddToReview) return;
@@ -181,22 +181,37 @@ const App = () => {
     setAddMessage(null);
 
     try {
-      await updateTodayStatus({
-        word: currentEntry.word,
-        status: "done",
-      });
+      if (activeTab === "review") {
+        await deleteRowByWord({
+          sheet: "Review",
+          word: currentEntry.word,
+        });
+        setData((prev) => ({
+          ...prev,
+          review: prev.review.filter(
+            (entry) => entry.word !== currentEntry.word,
+          ),
+        }));
+        setIndex(0);
+        setAddMessage("복습 탭에서 삭제되었습니다.");
+      } else {
+        await updateTodayStatus({
+          word: currentEntry.word,
+          status: "done",
+        });
 
-      setData((prev) => ({
-        ...prev,
-        today: prev.today.map((entry) =>
-          entry.word === currentEntry.word
-            ? { ...entry, status: "done" }
-            : entry,
-        ),
-      }));
+        setData((prev) => ({
+          ...prev,
+          today: prev.today.map((entry) =>
+            entry.word === currentEntry.word
+              ? { ...entry, status: "done" }
+              : entry,
+          ),
+        }));
 
-      setIndex(0);
-      setAddMessage("학습 완료로 표시되었습니다.");
+        setIndex(0);
+        setAddMessage("학습 완료로 표시되었습니다.");
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "학습 완료 처리 실패";
@@ -273,8 +288,9 @@ const App = () => {
             }
             canAddToReview={canAddToReview}
             addLoading={addLoading}
-            onMarkDone={activeTab === "today" ? handleMarkDone : undefined}
+            onMarkDone={handleMarkDone}
             canMarkDone={canMarkDone}
+            markDoneLabel="학습 완료"
             doneLoading={doneLoading}
             aiExample={aiExample}
             aiLoading={aiLoading}

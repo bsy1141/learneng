@@ -14,6 +14,7 @@ type FlashcardProps = {
   canMarkDone?: boolean;
   addLoading?: boolean;
   doneLoading?: boolean;
+  markDoneLabel?: string;
   aiExample?: string | null;
   aiLoading?: boolean;
   index: number;
@@ -32,6 +33,7 @@ const Flashcard = ({
   canMarkDone,
   addLoading,
   doneLoading,
+  markDoneLabel,
   aiExample,
   index,
   total,
@@ -88,7 +90,7 @@ const Flashcard = ({
               {doneLoading
                 ? "처리 중..."
                 : canMarkDone
-                  ? "학습 완료"
+                  ? markDoneLabel ?? "학습 완료"
                   : "완료됨"}
             </button>
           )}

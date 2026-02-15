@@ -11,18 +11,18 @@ type ReviewPayload = {
 };
 
 const getGoogleAuth = () => {
-  const credentials = JSON.parse(
-    process.env.GOOGLE_SERVICE_ACCOUNT_JSON || "{}",
-  );
+  const credentialsStr = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
 
-  if (!credentials) {
+  if (!credentialsStr) {
     throw new Error(
       "GOOGLE_SERVICE_ACCOUNT_JSON 환경 변수가 설정되지 않았습니다.",
     );
   }
 
+  const credentials = JSON.parse(credentialsStr);
+
   const auth = new google.auth.GoogleAuth({
-    credentials: JSON.parse(credentials),
+    credentials,
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 

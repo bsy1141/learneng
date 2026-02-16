@@ -259,7 +259,7 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
     set({ updateLoading: true, updateDisabled: true, addMessage: null });
 
     try {
-      const response = await fetch("http://localhost:5678/webhook-test/update", {
+      const response = await fetch(import.meta.env.WEBHOOK_URL, {
         method: "POST",
       });
 

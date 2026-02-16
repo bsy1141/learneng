@@ -21,6 +21,7 @@ const headerMap: Record<string, keyof VocabEntry> = {
   "예문 (Example)": "example",
   "태그 (Tags)": "tags",
   "학습 상태 (Status)": "status",
+  "학습 예정 일": "nextReview",
 };
 
 const mapRows = (rows: RawRow[]): VocabEntry[] => {
